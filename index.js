@@ -1,10 +1,22 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Bot activo ✅');
+});
+
+app.listen(3000, () => {
+  console.log('Servidor web activo en puerto 3000');
+});
+
+const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers
   ]
 });
 
@@ -16,20 +28,23 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith('.phase')) return;
 
-  // Solo admins pueden usarlo (opcional pero recomendado)
-  if (!message.member.permissions.has('ManageRoles')) {
+  // 🔒 Solo usuarios con Manage Roles
+  if (!message.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
     return message.reply('No tienes permiso para usar este comando ❌');
   }
 
   const args = message.content.split(/ +/);
-
   const member = message.mentions.members.first();
+
   if (!member) {
     return message.reply('Debes mencionar a un usuario.');
   }
 
-  // Roles después del usuario
   const rolesArgs = args.slice(2);
+
+  if (!rolesArgs.length) {
+    return message.reply('Debes escribir los roles después del usuario.');
+  }
 
   for (const roleName of rolesArgs) {
     const role = message.guild.roles.cache.find(
@@ -37,7 +52,11 @@ client.on('messageCreate', async (message) => {
     );
 
     if (role) {
-      await member.roles.add(role);
+      try {
+        await member.roles.add(role);
+      } catch (err) {
+        console.log(`No se pudo asignar el rol ${roleName}`);
+      }
     }
   }
 
