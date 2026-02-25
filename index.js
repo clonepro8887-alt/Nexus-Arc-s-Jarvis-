@@ -23,12 +23,12 @@ const client = new Client({
 client.once("ready", () => {
   console.log(`Bot listo como ${client.user.tag}`);
 
-  // 🔹 Auto mensaje cada 10 minutos para mantener activo el bot
-  const channel = client.channels.cache.get("1458171162965180524");
+  // 🔹 Auto mensaje cada 5 minutos para mantener activo el bot
+  const channel = client.channels.cache.get("1458171162965180524"); // tu ID de canal
   if (channel) {
     setInterval(() => {
       channel.send("¡Estoy vivo! 🔥").catch(() => {});
-    }, 10 * 60 * 1000); // 10 minutos
+    }, 5 * 60 * 1000); // 5 minutos
   } else {
     console.log("Canal para auto mensaje no encontrado");
   }
@@ -50,32 +50,48 @@ client.on("messageCreate", async (message) => {
 
   const text = args.slice(2).join(" ").toLowerCase();
 
-  // 🔥 Roles phase completos
+  // 🔹 Listas de roles
   const phases = ["Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "App Ph 1"];
+  const normalRoles = ["Low", "Weak", "Mid", "Stable", "High", "Strong"];
+
+  // 1️⃣ Eliminar roles antiguos (solo de tus listas)
+  for (const phase of phases) {
+    const role = message.guild.roles.cache.find(r => r.name === phase);
+    if (role && member.roles.cache.has(role.id)) {
+      try {
+        await member.roles.remove(role);
+      } catch {}
+    }
+  }
+
+  for (const rName of normalRoles) {
+    const role = message.guild.roles.cache.find(r => r.name === rName);
+    if (role && member.roles.cache.has(role.id)) {
+      try {
+        await member.roles.remove(role);
+      } catch {}
+    }
+  }
+
+  // 2️⃣ Dar roles nuevos
   for (const phase of phases) {
     if (text.includes(phase.toLowerCase())) {
-      const role = message.guild.roles.cache.find((r) => r.name === phase);
+      const role = message.guild.roles.cache.find(r => r.name === phase);
       if (role) {
         try {
           await member.roles.add(role);
-        } catch (err) {
-          console.log(`No se pudo asignar ${role.name}: ${err.message}`);
-        }
+        } catch {}
       }
     }
   }
 
-  // 🔥 Roles normales completos
-  const normalRoles = ["Low", "Weak", "Mid", "Stable", "High", "Strong"];
   for (const rName of normalRoles) {
     if (text.includes(rName.toLowerCase())) {
-      const role = message.guild.roles.cache.find((r) => r.name === rName);
+      const role = message.guild.roles.cache.find(r => r.name === rName);
       if (role) {
         try {
           await member.roles.add(role);
-        } catch (err) {
-          console.log(`No se pudo asignar ${role.name}: ${err.message}`);
-        }
+        } catch {}
       }
     }
   }
