@@ -1,67 +1,54 @@
-const express = require('express');
-const app = express();
-
-const PORT = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-  res.send('Bot activo ✅');
-});
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Servidor web activo en puerto ${PORT}`);
-});
-
-const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js');
-
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
-  ]
-});
-
-client.once('ready', () => {
-  console.log(`Bot listo como ${client.user.tag}`);
-});
-
-client.on('messageCreate', async (message) => {
+client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
-  if (!message.content.startsWith('.phase')) return;
+  if (!message.content.startsWith(".")) return;
 
-  if (!message.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
-    return message.reply('No tienes permiso para usar este comando ❌');
-  }
+  const args = message.content.slice(1).trim().split(/ +/);
+  const command = args.shift().toLowerCase();
 
-  const args = message.content.split(/ +/);
-  const member = message.mentions.members.first();
+  if (command === "phase") {
 
-  if (!member) {
-    return message.reply('Debes mencionar a un usuario.');
-  }
-
-  const rolesArgs = args.slice(2);
-
-  if (!rolesArgs.length) {
-    return message.reply('Debes escribir los roles después del usuario.');
-  }
-
-  for (const roleName of rolesArgs) {
-    const role = message.guild.roles.cache.find(
-      r => r.name.toLowerCase() === roleName.toLowerCase()
-    );
-
-    if (role) {
-      try {
-        await member.roles.add(role);
-      } catch (err) {
-        console.log(`No se pudo asignar el rol ${roleName}`);
-      }
+    if (!message.member.permissions.has("ManageRoles")) {
+      return message.reply("No tienes permiso para usar este comando.");
     }
+
+    const member = message.mentions.members.first();
+    if (!member) return message.reply("Menciona a un usuario.");
+
+    const text = args.join(" ").toLowerCase();
+
+    // PHASE ROLES
+    if (text.includes("phase 0")) {
+      const role = message.guild.roles.cache.find(r => r.name === "Phase 0");
+      if (role) member.roles.add(role);
+    }
+
+    if (text.includes("phase 1")) {
+      const role = message.guild.roles.cache.find(r => r.name === "Phase 1");
+      if (role) member.roles.add(role);
+    }
+
+    if (text.includes("phase 2")) {
+      const role = message.guild.roles.cache.find(r => r.name === "Phase 2");
+      if (role) member.roles.add(role);
+    }
+
+    if (text.includes("phase 3")) {
+      const role = message.guild.roles.cache.find(r => r.name === "Phase 3");
+      if (role) member.roles.add(role);
+    }
+
+    // MID
+    if (text.includes("mid")) {
+      const role = message.guild.roles.cache.find(r => r.name === "Mid");
+      if (role) member.roles.add(role);
+    }
+
+    // STABLE
+    if (text.includes("stable")) {
+      const role = message.guild.roles.cache.find(r => r.name === "Stable");
+      if (role) member.roles.add(role);
+    }
+
+    message.channel.send("Roles actualizados.");
   }
-
-  message.reply('Roles asignados correctamente ✅');
 });
-
-client.login(process.env.TOKEN);
