@@ -1,12 +1,14 @@
 const express = require('express');
 const app = express();
 
+const PORT = process.env.PORT || 3000;
+
 app.get('/', (req, res) => {
   res.send('Bot activo ✅');
 });
 
-app.listen(3000, () => {
-  console.log('Servidor web activo en puerto 3000');
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor web activo en puerto ${PORT}`);
 });
 
 const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js');
@@ -28,7 +30,6 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith('.phase')) return;
 
-  // 🔒 Solo usuarios con Manage Roles
   if (!message.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
     return message.reply('No tienes permiso para usar este comando ❌');
   }
