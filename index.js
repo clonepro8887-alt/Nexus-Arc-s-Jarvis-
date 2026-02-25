@@ -2,9 +2,7 @@
 const express = require("express");
 const app = express();
 
-app.get("/", (req, res) => {
-  res.send("Bot online ✅");
-});
+app.get("/", (req, res) => res.send("Bot online ✅"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor web activo en puerto ${PORT}`));
@@ -24,6 +22,16 @@ const client = new Client({
 // 2️⃣ Event cuando el bot está listo
 client.once("ready", () => {
   console.log(`Bot listo como ${client.user.tag}`);
+
+  // 🔹 Auto mensaje cada 10 minutos para mantener activo el bot
+  const channel = client.channels.cache.get("1458171162965180524");
+  if (channel) {
+    setInterval(() => {
+      channel.send("¡Estoy vivo! 🔥").catch(() => {});
+    }, 10 * 60 * 1000); // 10 minutos
+  } else {
+    console.log("Canal para auto mensaje no encontrado");
+  }
 });
 
 // 3️⃣ Comando .phase
@@ -42,8 +50,8 @@ client.on("messageCreate", async (message) => {
 
   const text = args.slice(2).join(" ").toLowerCase();
 
-  // 🔥 Roles phase
-  const phases = ["Phase 0", "Phase 1", "Phase 2", "Phase 3"];
+  // 🔥 Roles phase completos
+  const phases = ["Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "App Ph 1"];
   for (const phase of phases) {
     if (text.includes(phase.toLowerCase())) {
       const role = message.guild.roles.cache.find((r) => r.name === phase);
@@ -57,8 +65,8 @@ client.on("messageCreate", async (message) => {
     }
   }
 
-  // 🔥 Roles normales
-  const normalRoles = ["Mid", "Stable"];
+  // 🔥 Roles normales completos
+  const normalRoles = ["Low", "Weak", "Mid", "Stable", "High", "Strong"];
   for (const rName of normalRoles) {
     if (text.includes(rName.toLowerCase())) {
       const role = message.guild.roles.cache.find((r) => r.name === rName);
