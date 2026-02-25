@@ -14,22 +14,30 @@ client.once('ready', () => {
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
+  if (!message.content.startsWith('.phase')) return;
 
-  if (!message.content.startsWith('!phase')) return;
-
-  const args = message.content.slice(7).trim().split(/ +/);
-
-  if (!args.length) {
-    return message.reply('Escribe los roles después de !phase');
+  // Solo admins pueden usarlo (opcional pero recomendado)
+  if (!message.member.permissions.has('ManageRoles')) {
+    return message.reply('No tienes permiso para usar este comando ❌');
   }
 
-  for (const roleName of args) {
+  const args = message.content.split(/ +/);
+
+  const member = message.mentions.members.first();
+  if (!member) {
+    return message.reply('Debes mencionar a un usuario.');
+  }
+
+  // Roles después del usuario
+  const rolesArgs = args.slice(2);
+
+  for (const roleName of rolesArgs) {
     const role = message.guild.roles.cache.find(
       r => r.name.toLowerCase() === roleName.toLowerCase()
     );
 
     if (role) {
-      await message.member.roles.add(role);
+      await member.roles.add(role);
     }
   }
 
