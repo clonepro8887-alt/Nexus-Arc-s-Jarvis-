@@ -13,7 +13,6 @@ const client = new Client({
 // ============================
 //        RAILWAY SERVER
 // ============================
-
 const app = express();
 
 app.get("/", (req, res) => {
@@ -28,86 +27,96 @@ app.listen(PORT, () => {
 // ============================
 //        CLIENT READY
 // ============================
-
-client.once("ready", () => {
-  console.log(`Conectado como ${client.user.tag}`);
+client.once("clientReady", (c) => {
+  console.log(`Conectado como ${c.user.tag}`);
 });
 
 // ============================
 //        MESSAGE CREATE
 // ============================
-
 client.on("messageCreate", async (message) => {
 
   if (message.author.bot) return;
-
   const content = message.content.toLowerCase();
 
   // =========================
   //        PHASE SYSTEM
   // =========================
-
-  if (content.startsWith(".phase")) {
+  if (content.startsWith(".phase") || content.startsWith(".ph")) {
 
     if (!message.member.permissions.has("Administrator"))
       return message.reply("Solo administradores pueden usar este comando.");
 
-    const args = message.content.split(" ");
+    const args = message.content.trim().split(/\s+/);
     const member = message.mentions.members.first();
-
     if (!member) return message.reply("Menciona a un usuario.");
 
     const phaseNumber = args[2];
-    const tier = args[3]?.toLowerCase();
+    const level = args[3]?.toLowerCase();
+    const state = args[4]?.toLowerCase();
 
-    if (!phaseNumber || !tier)
-      return message.reply("Usa: .phase @user número tier");
+    if (!phaseNumber || !level || !state)
+      return message.reply("Usa: .phase @user numero level state");
 
     const phaseRoles = {
+      "0": "1458682851414380605",
       "1": "1458680324799201280",
-      "2": "11458680268272439388",
+      "2": "1476995979763912977", // Phase 2 corregido
       "3": "1458680188937175296",
       "4": "1458679781536043060",
-      "5": "1458678850060947719"
+      "5": "1458678850060947719",
+      "app": "1473427053561905363"
     };
 
-    const tierRoles = {
+    const levelRoles = {
       low: "1458679384691970186",
       mid: "1458679896837586976",
-      high: "1458680037912875151",
+      high: "1458680037912875151"
+    };
+
+    const stateRoles = {
       weak: "1458679584429178921",
       estable: "1458679985668755466",
       strong: "1458680108066930731"
     };
 
     const selectedPhase = phaseRoles[phaseNumber];
-    const selectedTier = tierRoles[tier];
+    const selectedLevel = levelRoles[level];
+    const selectedState = stateRoles[state];
 
-    if (!selectedPhase || !selectedTier)
-      return message.reply("Phase o tier inválido.");
+    if (!selectedPhase) return message.reply("Phase inválida.");
+    if (!selectedLevel) return message.reply("Nivel inválido.");
+    if (!selectedState) return message.reply("Estado inválido.");
 
     try {
 
-      // Quitar phases anteriores
-      for (const id of Object.values(phaseRoles)) {
-        if (member.roles.cache.has(id)) await member.roles.remove(id);
+      // Quitar todas las phases y niveles anteriores
+      const allRoles = [
+        ...Object.values(phaseRoles),
+        ...Object.values(levelRoles),
+        ...Object.values(stateRoles)
+      ];
+
+      for (const id of allRoles) {
+        if (member.roles.cache.has(id)) {
+          await member.roles.remove(id);
+        }
       }
 
-      // Quitar tiers anteriores
-      for (const id of Object.values(tierRoles)) {
-        if (member.roles.cache.has(id)) await member.roles.remove(id);
-      }
-
+      // Añadir roles nuevos
       await member.roles.add(selectedPhase);
-      await member.roles.add(selectedTier);
+      await member.roles.add(selectedLevel);
+      await member.roles.add(selectedState);
 
+      // Embed
       const embed = new EmbedBuilder()
         .setColor("#2b2d31")
         .setTitle("PHASE ACTUALIZADA")
         .setDescription(
           `Usuario: ${member}\n` +
           `Phase: ${phaseNumber}\n` +
-          `Tier: ${tier.toUpperCase()}`
+          `Nivel: ${level.toUpperCase()}\n` +
+          `Estado: ${state.toUpperCase()}`
         )
         .setThumbnail("https://cdn.discordapp.com/attachments/1233881531404124202/1476661075138314260/a7010d0c5a38634ed065c269679e7fcd.gif")
         .setFooter({ text: "Nexus System" })
@@ -117,18 +126,14 @@ client.on("messageCreate", async (message) => {
 
     } catch (err) {
       console.error(err);
-      return message.reply("Error asignando roles.");
+      return message.reply("Error asignando roles. Revisa permisos y posición del bot.");
     }
   }
 
   // =========================
   //      AUTO CHAT 5%
   // =========================
-
-  const probabilidad = Math.random();
-
-  if (probabilidad <= 0.05) {
-
+  if (Math.random() <= 0.05) {
     const burlas = [
       "tas medio lento ah",
       "más rápido mi internet",
@@ -136,7 +141,6 @@ client.on("messageCreate", async (message) => {
       "concentrate mejor",
       "modo ahorro activado?"
     ];
-
     const randomBurla = burlas[Math.floor(Math.random() * burlas.length)];
     return message.reply(randomBurla);
   }
@@ -144,7 +148,6 @@ client.on("messageCreate", async (message) => {
   // =========================
   //      RESPUESTAS NORMALES
   // =========================
-
   if (content.includes("hola") || content.includes("buenas")) {
     return message.reply("Habla.");
   }
@@ -170,5 +173,4 @@ client.on("messageCreate", async (message) => {
 // ============================
 //        LOGIN
 // ============================
-
 client.login(process.env.TOKEN);
