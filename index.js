@@ -44,8 +44,9 @@ client.on("messageCreate", async (message) => {
   // =========================
   if (content.startsWith(".phase") || content.startsWith(".ph")) {
 
-    if (!message.member.permissions.has("Administrator"))
-      return message.reply("Solo administradores pueden usar este comando.");
+    const allowedRoleId = "1476999983180808393"; // Rol que puede usar el comando
+    if (!message.member.roles.cache.has(allowedRoleId))
+      return message.reply("❌ No tienes el rol necesario para usar este comando.");
 
     const args = message.content.trim().split(/\s+/);
     const member = message.mentions.members.first();
@@ -56,7 +57,7 @@ client.on("messageCreate", async (message) => {
     const state = args[4]?.toLowerCase();
 
     if (!phaseKey || !level || !state)
-      return message.reply("Usa: .phase @user ph1/ph2/... level state");
+      return message.reply("Usa: .phase @user ph0/ph1/ph2/app1/ph3/ph4/ph5 nivel estado");
 
     const phaseRoles = {
       ph0: "1458682851414380605",
@@ -89,7 +90,7 @@ client.on("messageCreate", async (message) => {
     if (!selectedState) return message.reply("Estado inválido.");
 
     try {
-      // Quitar todas las phases y niveles anteriores
+      // Quitar todas las phases, niveles y estados anteriores
       const allRoles = [
         ...Object.values(phaseRoles),
         ...Object.values(levelRoles),
