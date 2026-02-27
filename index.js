@@ -51,21 +51,21 @@ client.on("messageCreate", async (message) => {
     const member = message.mentions.members.first();
     if (!member) return message.reply("Menciona a un usuario.");
 
-    const phaseNumber = args[2];
+    const phaseKey = args[2]?.toLowerCase();
     const level = args[3]?.toLowerCase();
     const state = args[4]?.toLowerCase();
 
-    if (!phaseNumber || !level || !state)
-      return message.reply("Usa: .phase @user numero level state");
+    if (!phaseKey || !level || !state)
+      return message.reply("Usa: .phase @user ph1/ph2/... level state");
 
     const phaseRoles = {
-      "0": "1458682851414380605",
-      "1": "1458680324799201280",
-      "2": "1476995979763912977", // Phase 2 corregido
-      "3": "1458680188937175296",
-      "4": "1458679781536043060",
-      "5": "1458678850060947719",
-      "app": "1473427053561905363"
+      ph0: "1458682851414380605",
+      ph1: "1458680324799201280",
+      ph2: "1476995979763912977", // Phase 2 actualizado
+      app1: "1473427053561905363",
+      ph3: "1458680188937175296",
+      ph4: "1458679781536043060",
+      ph5: "1458678850060947719"
     };
 
     const levelRoles = {
@@ -80,7 +80,7 @@ client.on("messageCreate", async (message) => {
       strong: "1458680108066930731"
     };
 
-    const selectedPhase = phaseRoles[phaseNumber];
+    const selectedPhase = phaseRoles[phaseKey];
     const selectedLevel = levelRoles[level];
     const selectedState = stateRoles[state];
 
@@ -114,12 +114,12 @@ client.on("messageCreate", async (message) => {
         .setTitle("PHASE ACTUALIZADA")
         .setDescription(
           `Usuario: ${member}\n` +
-          `Phase: ${phaseNumber}\n` +
+          `Phase: ${phaseKey.toUpperCase()}\n` +
           `Nivel: ${level.toUpperCase()}\n` +
           `Estado: ${state.toUpperCase()}`
         )
         .setThumbnail("https://cdn.discordapp.com/attachments/1233881531404124202/1476661075138314260/a7010d0c5a38634ed065c269679e7fcd.gif")
-        .setFooter({ text: "Nexus System" })
+        .setFooter({ text: `Asignado por: ${message.author.tag}` })
         .setTimestamp();
 
       return message.reply({ embeds: [embed] });
