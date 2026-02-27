@@ -1,28 +1,7 @@
-{
-  "name": "nexus-bot",
-  "version": "1.0.0",
-  "description": "Discord bot con sistema .phase y OpenAI",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "discord.js": "^14.17.0",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "openai": "^4.9.0"
-  },
-  "engines": {
-    "node": "20.x"
-  },
-  "keywords": [
-    "discord",
-    "bot",
-    "openai",
-    "phase",
-    "nexus"
-  ],
-  "author": "Lexa",
-  "license": "MIT"
+"dependencies": {
+  "discord.js": "^14.17.0",
+  "dotenv": "^16.3.1",
+  "express": "^4.18.2",
+  "openai": "^4.9.0",
+  "otra-dependencia": "^1.2.3"
 }
