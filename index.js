@@ -8,7 +8,7 @@ dotenv.config();
 //       OpenAI
 // ============================
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY // toma la API key de Railway
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 // ============================
@@ -145,20 +145,25 @@ client.on("messageCreate", async (message) => {
   }
 
   // =========================
-  //       RESPUESTA OPENAI
+  //       RESPUESTA OPENAI SOLO >ask
   // =========================
-  if (!content.startsWith(".phase") && !message.author.bot) {
+  if (content.startsWith(">ask")) {
+    const question = message.content.slice(4).trim(); // quitar '>ask' y espacios
+    if (question.length === 0) return message.reply("❌ Escribe tu pregunta después de `>ask`.");
+
     try {
-      if (content.trim().length === 0) return; // evita mensajes vacíos
       const response = await openai.chat.completions.create({
         model: "gpt-4.1-mini",
-        messages: [{ role: "user", content: message.content }],
+        messages: [{ role: "user", content: question }],
         max_tokens: 150
       });
+
       const reply = response.choices[0].message.content;
       return message.reply(reply);
+
     } catch (err) {
       console.error("Error OpenAI:", err);
+      return message.reply("❌ Ocurrió un error al consultar OpenAI.");
     }
   }
 });
