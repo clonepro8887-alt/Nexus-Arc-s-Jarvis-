@@ -1,20 +1,12 @@
 {
-  "name": "jarvis-bot",
+  "name": "nexus-bot",
   "version": "1.0.0",
-  "description": "Made for Nexus: manage phases and roles automatically",
-  "author": "Lexa",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
-    "express": "^4.18.2",
-    "dotenv": "^16.4.0"
-  },
-  "engines": {
-    "node": ">=22.0.0"
-  },
-  "license": "MIT"
+    "express": "^4.18.2"
+  }
 }
