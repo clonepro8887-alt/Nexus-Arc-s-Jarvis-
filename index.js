@@ -61,7 +61,7 @@ client.on("messageCreate", async (message) => {
     const phaseRoles = {
       ph0: "1458682851414380605",
       ph1: "1458680324799201280",
-      ph2: "1476995979763912977", // Phase 2 actualizado
+      ph2: "1476995979763912977",
       app1: "1473427053561905363",
       ph3: "1458680188937175296",
       ph4: "1458679781536043060",
@@ -89,7 +89,6 @@ client.on("messageCreate", async (message) => {
     if (!selectedState) return message.reply("Estado inválido.");
 
     try {
-
       // Quitar todas las phases y niveles anteriores
       const allRoles = [
         ...Object.values(phaseRoles),
@@ -99,14 +98,21 @@ client.on("messageCreate", async (message) => {
 
       for (const id of allRoles) {
         if (member.roles.cache.has(id)) {
-          await member.roles.remove(id);
+          try { await member.roles.remove(id); }
+          catch (e) { console.log(`No se pudo quitar rol ${id} a ${member.user.tag}`); }
         }
       }
 
       // Añadir roles nuevos
-      await member.roles.add(selectedPhase);
-      await member.roles.add(selectedLevel);
-      await member.roles.add(selectedState);
+      const addedRoles = [];
+      for (const roleId of [selectedPhase, selectedLevel, selectedState]) {
+        try {
+          await member.roles.add(roleId);
+          addedRoles.push(roleId);
+        } catch (e) {
+          console.log(`No se pudo asignar rol ${roleId} a ${member.user.tag}`);
+        }
+      }
 
       // Embed
       const embed = new EmbedBuilder()
@@ -116,7 +122,8 @@ client.on("messageCreate", async (message) => {
           `Usuario: ${member}\n` +
           `Phase: ${phaseKey.toUpperCase()}\n` +
           `Nivel: ${level.toUpperCase()}\n` +
-          `Estado: ${state.toUpperCase()}`
+          `Estado: ${state.toUpperCase()}\n` +
+          `Roles asignados: ${addedRoles.length}/3`
         )
         .setThumbnail("https://cdn.discordapp.com/attachments/1233881531404124202/1476661075138314260/a7010d0c5a38634ed065c269679e7fcd.gif")
         .setFooter({ text: `Asignado por: ${message.author.tag}` })
@@ -126,7 +133,6 @@ client.on("messageCreate", async (message) => {
 
     } catch (err) {
       console.error(err);
-      return message.reply("Error asignando roles. Revisa permisos y posición del bot.");
     }
   }
 
@@ -148,26 +154,11 @@ client.on("messageCreate", async (message) => {
   // =========================
   //      RESPUESTAS NORMALES
   // =========================
-  if (content.includes("hola") || content.includes("buenas")) {
-    return message.reply("Habla.");
-  }
-
-  if (content.includes("nexus")) {
-    return message.reply("Nexus activo.");
-  }
-
-  if (content.includes("quien manda")) {
-    return message.reply("El sistema.");
-  }
-
-  if (content.includes("me aburro")) {
-    return message.reply("Entrena más.");
-  }
-
-  if (message.mentions.has(client.user)) {
-    return message.reply("¿Qué necesitas?");
-  }
-
+  if (content.includes("hola") || content.includes("buenas")) return message.reply("Habla.");
+  if (content.includes("nexus")) return message.reply("Nexus activo.");
+  if (content.includes("quien manda")) return message.reply("El sistema.");
+  if (content.includes("me aburro")) return message.reply("Entrena más.");
+  if (message.mentions.has(client.user)) return message.reply("¿Qué necesitas?");
 });
 
 // ============================
