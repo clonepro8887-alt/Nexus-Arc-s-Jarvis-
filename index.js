@@ -1,5 +1,5 @@
 // ================= IMPORTS =================
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const express = require("express");
 
 // ================= WEB PARA RAILWAY =================
@@ -7,11 +7,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
-  res.send("🔥 Nexus Bot activo 24/7 en Railway");
+  res.send("Nexus Bot activo 24/7 en Railway");
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🌐 Web activa en puerto ${PORT}`);
+  console.log(`Web activa en puerto ${PORT}`);
 });
 
 // ================= DISCORD BOT =================
@@ -44,60 +44,52 @@ const LEVEL_ROLES = {
   "strong": "1458680108066930731"
 };
 
-// ID de canal #general donde funciona auto chat
 const GENERAL_CHANNEL_ID = "1458311760233889973";
 
-// ================= EVENTO READY =================
+// ================= READY =================
 client.once("clientReady", () => {
-  console.log(`🔥 Bot listo como ${client.user.tag}`);
+  console.log(`Bot listo como ${client.user.tag}`);
 });
 
-// ================= EVENTO MESSAGE =================
+// ================= MESSAGE EVENT =================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  // ===== AUTO CHAT SOLO EN GENERAL =====
+  // ===== AUTO CHAT =====
   if (message.channel.id === GENERAL_CHANNEL_ID) {
     const rand = Math.random();
 
-    // 10% chance: respuesta normal
     if (rand < 0.10) {
-      const burlasLatam = [
-        "Weeee, eso ta medio jato 😂",
-        "Ta bravo el we 😎",
-        "No manches, weee 😭",
-        "Jajaja qué haces güey XD",
-        "Ta pesado eso, boludo 👀",
-        "Weee, eso suena duro 😂",
-        "XD qué weeee",
-        "Ja ja ja, te leyeron we",
-        "Ta todo cagado 😂"
+      const frases = [
+        "Weee eso ta medio raro",
+        "Ta fuerte lo que dices",
+        "No manches",
+        "Jajaja qué fue eso",
+        "Ta pesado eso",
+        "XD qué fue"
       ];
-      const random = burlasLatam[Math.floor(Math.random() * burlasLatam.length)];
+      const random = frases[Math.floor(Math.random() * frases.length)];
       message.channel.send(random);
     }
 
-    // 10% chance: burlita picante a alguien mencionado
     else if (rand < 0.20 && message.mentions.members.size > 0) {
-      const burlasFuerte = [
-        "Jajaja pobre",
-        "Weee mirá quién habla 😏",
-        "XD qué le pasó ahora a",
-        "Ta cagado weee"
+      const burlas = [
+        "Mira quién habla",
+        "Qué pasó ahora",
+        "Eso lo dice él",
+        "Interesante viniendo de"
       ];
       const target = message.mentions.members.first();
-      const random = burlasFuerte[Math.floor(Math.random() * burlasFuerte.length)];
-      message.channel.send(`${random} ${target.user.username} 😂`);
+      const random = burlas[Math.floor(Math.random() * burlas.length)];
+      message.channel.send(`${random} ${target.user.username}`);
     }
-
-    // 80% chance: no dice nada
   }
 
   // ===== COMANDO .PHASE =====
   if (!message.content.startsWith(".phase")) return;
 
   if (!message.member.permissions.has("Administrator")) {
-    return message.reply("❌ No tienes permiso para usar este comando.");
+    return message.reply({ content: "No tienes permiso.", allowedMentions: { repliedUser: false } });
   }
 
   const args = message.content.trim().split(/\s+/);
@@ -106,56 +98,85 @@ client.on("messageCreate", async (message) => {
   const level1 = args[3]?.toLowerCase();
   const level2 = args[4]?.toLowerCase();
 
-  if (!target) return message.reply("❌ Menciona un usuario.");
-  if (!PHASE_ROLES[phase]) return message.reply("❌ Fase inválida (0-5 o app).");
+  if (!target) return message.reply("Menciona un usuario.");
+  if (!PHASE_ROLES[phase]) return message.reply("Fase inválida (0-5 o app).");
 
   try {
-    // 🔄 Quitar todas las fases que el bot pueda quitar
+    const botHighest = message.guild.members.me.roles.highest.position;
+
+    // Quitar fases
     for (let key in PHASE_ROLES) {
-      const roleId = PHASE_ROLES[key];
-      if (target.roles.cache.has(roleId) && message.guild.roles.cache.has(roleId)) {
-        const role = message.guild.roles.cache.get(roleId);
-        if (role.position < message.guild.me.roles.highest.position) {
-          await target.roles.remove(role);
-        }
+      const role = message.guild.roles.cache.get(PHASE_ROLES[key]);
+      if (role && target.roles.cache.has(role.id) && role.position < botHighest) {
+        await target.roles.remove(role);
       }
     }
 
-    // 🔄 Quitar todos los niveles que el bot pueda quitar
+    // Quitar niveles
     for (let key in LEVEL_ROLES) {
-      const roleId = LEVEL_ROLES[key];
-      if (target.roles.cache.has(roleId) && message.guild.roles.cache.has(roleId)) {
-        const role = message.guild.roles.cache.get(roleId);
-        if (role.position < message.guild.me.roles.highest.position) {
-          await target.roles.remove(role);
-        }
+      const role = message.guild.roles.cache.get(LEVEL_ROLES[key]);
+      if (role && target.roles.cache.has(role.id) && role.position < botHighest) {
+        await target.roles.remove(role);
       }
     }
 
-    // ➕ Añadir nueva fase si el bot puede
+    // Añadir fase
     const phaseRole = message.guild.roles.cache.get(PHASE_ROLES[phase]);
-    if (phaseRole && phaseRole.position < message.guild.me.roles.highest.position) {
+    if (phaseRole && phaseRole.position < botHighest) {
       await target.roles.add(phaseRole);
     }
 
-    // ➕ Añadir subniveles si existen y el bot puede
+    // Añadir niveles
     if (LEVEL_ROLES[level1]) {
       const role = message.guild.roles.cache.get(LEVEL_ROLES[level1]);
-      if (role && role.position < message.guild.me.roles.highest.position) {
-        await target.roles.add(role);
-      }
-    }
-    if (LEVEL_ROLES[level2]) {
-      const role = message.guild.roles.cache.get(LEVEL_ROLES[level2]);
-      if (role && role.position < message.guild.me.roles.highest.position) {
+      if (role && role.position < botHighest) {
         await target.roles.add(role);
       }
     }
 
-    message.reply(`✅ ${target.user.username} ahora es Phase ${phase} ${level1 || ""} ${level2 || ""}`);
+    if (LEVEL_ROLES[level2]) {
+      const role = message.guild.roles.cache.get(LEVEL_ROLES[level2]);
+      if (role && role.position < botHighest) {
+        await target.roles.add(role);
+      }
+    }
+
+    // ===== EMBED ÉXITO =====
+    const successEmbed = new EmbedBuilder()
+      .setColor("#2b2d31")
+      .setAuthor({ name: "NEXUS SYSTEM" })
+      .setTitle("PHASE UPDATE")
+      .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
+      .setDescription("━━━━━━━━━━━━━━━━━━")
+      .addFields(
+        { name: "User", value: `${target}`, inline: false },
+        { name: "Phase", value: `> ${phase}`, inline: true },
+        { name: "Sub Tier 1", value: `> ${level1 || "None"}`, inline: true },
+        { name: "Sub Tier 2", value: `> ${level2 || "None"}`, inline: true },
+        { name: "Assigned by", value: `<@${message.author.id}>`, inline: false }
+      )
+      .setFooter({ text: "Nexus Authority • System Registered" })
+      .setTimestamp();
+
+    message.channel.send({ embeds: [successEmbed] });
+
   } catch (err) {
-    console.error("Error asignando roles:", err);
-    message.reply("❌ Error al asignar roles. Revisa jerarquía y permisos del bot.");
+    console.error(err);
+
+    const errorEmbed = new EmbedBuilder()
+      .setColor("#8b0000")
+      .setAuthor({ name: "NEXUS SYSTEM" })
+      .setTitle("PHASE UPDATE FAILED")
+      .setDescription("━━━━━━━━━━━━━━━━━━")
+      .addFields(
+        { name: "Status", value: "Role assignment failed.", inline: false },
+        { name: "Reason", value: "Check bot role hierarchy and permissions.", inline: false },
+        { name: "Requested by", value: `<@${message.author.id}>`, inline: false }
+      )
+      .setFooter({ text: "Nexus Authority • Error Log" })
+      .setTimestamp();
+
+    message.channel.send({ embeds: [errorEmbed] });
   }
 });
 
