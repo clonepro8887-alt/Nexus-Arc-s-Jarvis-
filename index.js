@@ -44,7 +44,7 @@ client.on("messageCreate", async (message) => {
   // =========================
   if (content.startsWith(".phase") || content.startsWith(".ph")) {
 
-    const allowedRoleId = "1476999983180808393"; // Rol que puede usar el comando
+    const allowedRoleId = "1457921277540040932"; // Rol permitido para usar .phase
     if (!message.member.roles.cache.has(allowedRoleId))
       return message.reply("❌ No tienes el rol necesario para usar este comando.");
 
