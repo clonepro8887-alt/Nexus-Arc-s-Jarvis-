@@ -1,19 +1,20 @@
+// ================= IMPORTS =================
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
 
+// ================= WEB PARA RAILWAY =================
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/* ================= WEB PARA RENDER ================= */
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("🌐 Web activa en puerto " + PORT);
-});
-
 app.get("/", (req, res) => {
-  res.send("🔥 Nexus Bot activo");
+  res.send("🔥 Nexus Bot activo 24/7 en Railway");
 });
 
-/* ================= DISCORD BOT ================= */
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🌐 Web activa en puerto ${PORT}`);
+});
+
+// ================= DISCORD BOT =================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -23,12 +24,7 @@ const client = new Client({
   ]
 });
 
-client.once("ready", () => {
-  console.log(`🔥 Bot listo como ${client.user.tag}`);
-});
-
-/* ================= IDs DE ROLES ================= */
-// Phases 1-5
+// ================= ROLES =================
 const PHASE_ROLES = {
   "1": "1476743660484956204",
   "2": "1476743716667527291",
@@ -38,7 +34,6 @@ const PHASE_ROLES = {
   "app": "1476743732584775722"
 };
 
-// Subniveles
 const LEVEL_ROLES = {
   "low": "1476744695282532485",
   "weak": "1476744710793068706",
@@ -48,33 +43,36 @@ const LEVEL_ROLES = {
   "strong": "1476744781253185688"
 };
 
-// Canal general
+// ID de canal #general donde funciona auto chat
 const GENERAL_CHANNEL_ID = "1458311760233889973";
 
-/* ================= EVENTO MENSAJES ================= */
+// ================= EVENTO READY =================
+client.once("ready", () => {
+  console.log(`🔥 Bot listo como ${client.user.tag}`);
+});
+
+// ================= EVENTO MESSAGE =================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  /* ===== AUTO CHAT SOLO EN GENERAL ===== */
-  if (message.channel.id === GENERAL_CHANNEL_ID) {
-    const msg = message.content.toLowerCase();
-
-    if (msg.includes("hola")) {
-      message.reply("🔥 Hola, soy el bot oficial de Nexus");
-    }
-
-    if (msg.includes("nexus")) {
-      message.reply("⚔️ Nexus domina el servidor");
-    }
-
-    if (msg.includes("bot")) {
-      message.reply("🤖 Estoy activo 24/7");
-    }
+  // ===== AUTO CHAT SOLO EN GENERAL =====
+  if (message.channel.id === GENERAL_CHANNEL_ID && Math.random() < 0.40) {
+    const respuestas = [
+      "Y que we 😂",
+      "Hablen bien ps",
+      "Ta fuerte eso 👀",
+      "XD",
+      "Eso sonó personal 😭",
+      "Estoy leyendo todo 👁️"
+    ];
+    const random = respuestas[Math.floor(Math.random() * respuestas.length)];
+    message.channel.send(random);
   }
 
-  /* ===== COMANDO .PHASE ===== */
+  // ===== COMANDO .PHASE =====
   if (!message.content.startsWith(".phase")) return;
 
+  // Solo admins o usuarios con Manage Roles
   if (!message.member.permissions.has("Administrator")) {
     return message.reply("❌ No tienes permiso para usar este comando.");
   }
@@ -89,20 +87,21 @@ client.on("messageCreate", async (message) => {
   if (!PHASE_ROLES[phase]) return message.reply("❌ Fase inválida (1-5 o app).");
 
   try {
+    // ===== DEPURACIÓN =====
+    console.log("Target:", target.user.tag);
+    console.log("Phase a añadir:", PHASE_ROLES[phase]);
+    console.log("Level1:", LEVEL_ROLES[level1], "Level2:", LEVEL_ROLES[level2]);
+
     // 🔄 Quitar todas las fases
     for (let key in PHASE_ROLES) {
       const roleId = PHASE_ROLES[key];
-      if (target.roles.cache.has(roleId)) {
-        await target.roles.remove(roleId);
-      }
+      if (target.roles.cache.has(roleId)) await target.roles.remove(roleId);
     }
 
-    // 🔄 Quitar todos los subniveles
+    // 🔄 Quitar todos los niveles
     for (let key in LEVEL_ROLES) {
       const roleId = LEVEL_ROLES[key];
-      if (target.roles.cache.has(roleId)) {
-        await target.roles.remove(roleId);
-      }
+      if (target.roles.cache.has(roleId)) await target.roles.remove(roleId);
     }
 
     // ➕ Añadir nueva fase
@@ -114,9 +113,10 @@ client.on("messageCreate", async (message) => {
 
     message.reply(`✅ ${target.user.username} ahora es Phase ${phase} ${level1 || ""} ${level2 || ""}`);
   } catch (err) {
-    console.error(err);
-    message.reply("❌ Error al asignar roles.");
+    console.error("Error asignando roles:", err);
+    message.reply("❌ Error al asignar roles. Revisa jerarquía y permisos del bot.");
   }
 });
 
+// ================= LOGIN =================
 client.login(process.env.TOKEN);
