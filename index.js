@@ -1,14 +1,4 @@
-// 0️⃣ Express para Render Web Service
-const express = require("express");
-const app = express();
-
-app.get("/", (req, res) => res.send("Bot online ✅"));
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor web activo en puerto ${PORT}`));
-
-// 1️⃣ Definir client
-const { Client, GatewayIntentBits, PermissionsBitField } = require("discord.js");
+const { Client, GatewayIntentBits } = require("discord.js");
 
 const client = new Client({
   intents: [
@@ -19,85 +9,96 @@ const client = new Client({
   ]
 });
 
-// 2️⃣ Event cuando el bot está listo
 client.once("ready", () => {
-  console.log(`Bot listo como ${client.user.tag}`);
-
-  // 🔹 Auto mensaje cada 5 minutos para mantener activo el bot
-  const channel = client.channels.cache.get("1458171162965180524"); // tu ID de canal
-  if (channel) {
-    setInterval(() => {
-      channel.send("¡Estoy vivo! 🔥").catch(() => {});
-    }, 5 * 60 * 1000); // 5 minutos
-  } else {
-    console.log("Canal para auto mensaje no encontrado");
-  }
+  console.log(`🔥 Bot listo como ${client.user.tag}`);
 });
 
-// 3️⃣ Comando .phase
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
-  if (!message.content.startsWith(".phase")) return;
 
-  // Solo staff
-  if (!message.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
-    return message.reply("No tienes permiso para usar este comando ❌");
-  }
+  // =================================================
+  // 🔥 COMANDO .PHASE
+  // =================================================
+  if (message.content.startsWith(".phase")) {
 
-  const args = message.content.split(/ +/);
-  const member = message.mentions.members.first();
-  if (!member) return message.reply("Debes mencionar a un usuario.");
+    const args = message.content.trim().split(/\s+/);
+    const member = message.mentions.members.first();
+    const phaseInput = args[2]?.toLowerCase();
+    const extras = args.slice(3).map(e => e.toLowerCase());
 
-  const text = args.slice(2).join(" ").toLowerCase();
+    if (!member) return message.reply("Menciona a un usuario.");
+    if (!phaseInput) return message.reply("Pon una fase.");
 
-  // 🔹 Listas de roles
-  const phases = ["Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "App Ph 1"];
-  const normalRoles = ["Low", "Weak", "Mid", "Stable", "High", "Strong"];
+    const roles = {
+      1: "1476743660484956204",
+      2: "1476743716667527291",
+      3: "1476743749542609048",
+      4: "1476743770304155811",
+      5: "1476743788973260954",
+      app: "1476743732584775722",
 
-  // 1️⃣ Eliminar roles antiguos (solo de tus listas)
-  for (const phase of phases) {
-    const role = message.guild.roles.cache.find(r => r.name === phase);
-    if (role && member.roles.cache.has(role.id)) {
-      try {
-        await member.roles.remove(role);
-      } catch {}
-    }
-  }
+      low: "1476744695282532485",
+      mid: "1476744806897287239",
+      high: "1476744734830498065",
 
-  for (const rName of normalRoles) {
-    const role = message.guild.roles.cache.find(r => r.name === rName);
-    if (role && member.roles.cache.has(role.id)) {
-      try {
-        await member.roles.remove(role);
-      } catch {}
-    }
-  }
+      weak: "1476744710793068706",
+      strong: "1476744781253185688",
+      stable: "1476744819043860591"
+    };
 
-  // 2️⃣ Dar roles nuevos
-  for (const phase of phases) {
-    if (text.includes(phase.toLowerCase())) {
-      const role = message.guild.roles.cache.find(r => r.name === phase);
-      if (role) {
-        try {
-          await member.roles.add(role);
-        } catch {}
+    if (!roles[phaseInput])
+      return message.reply("Fase inválida (1-5 o app).");
+
+    try {
+
+      // 🧹 Quitar todos los roles del sistema
+      for (let key in roles) {
+        if (member.roles.cache.has(roles[key])) {
+          await member.roles.remove(roles[key]);
+        }
       }
-    }
-  }
 
-  for (const rName of normalRoles) {
-    if (text.includes(rName.toLowerCase())) {
-      const role = message.guild.roles.cache.find(r => r.name === rName);
-      if (role) {
-        try {
-          await member.roles.add(role);
-        } catch {}
+      // ➕ Agregar fase
+      await member.roles.add(roles[phaseInput]);
+
+      // ➕ Agregar extras válidos
+      let extrasAgregados = [];
+
+      for (let extra of extras) {
+        if (roles[extra]) {
+          await member.roles.add(roles[extra]);
+          extrasAgregados.push(extra);
+        }
       }
+
+      return message.channel.send(
+        `🔥 ${member.user.username} ahora está en ${phaseInput} ${extrasAgregados.join(" ")}`
+      );
+
+    } catch (err) {
+      console.error(err);
+      return message.reply("Error al asignar roles.");
     }
   }
 
-  message.reply("Roles actualizados ✅");
+  // =================================================
+  // 🤖 AUTO CHAT 40%
+  // =================================================
+  if (Math.random() < 0.40) {
+
+    const respuestas = [
+      "Y que we 😂",
+      "Hablen bien ps",
+      "Ta fuerte eso 👀",
+      "XD",
+      "Eso sonó personal 😭",
+      "Estoy leyendo todo 👁️"
+    ];
+
+    const random = respuestas[Math.floor(Math.random() * respuestas.length)];
+
+    message.channel.send(random);
+  }
 });
 
-// 4️⃣ Login del bot
 client.login(process.env.TOKEN);
