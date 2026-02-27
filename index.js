@@ -5,7 +5,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 /* ================= WEB PARA RENDER ================= */
-
 app.listen(PORT, "0.0.0.0", () => {
   console.log("🌐 Web activa en puerto " + PORT);
 });
@@ -15,7 +14,6 @@ app.get("/", (req, res) => {
 });
 
 /* ================= DISCORD BOT ================= */
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -30,15 +28,14 @@ client.once("ready", () => {
 });
 
 /* ================= IDs DE ROLES ================= */
-
-// Phases 0-5
+// Phases 1-5
 const PHASE_ROLES = {
-  "0": null, // sin fase
   "1": "1476743660484956204",
   "2": "1476743716667527291",
   "3": "1476743749542609048",
   "4": "1476743770304155811",
-  "5": "1476743788973260954"
+  "5": "1476743788973260954",
+  "app": "1476743732584775722"
 };
 
 // Subniveles
@@ -55,12 +52,10 @@ const LEVEL_ROLES = {
 const GENERAL_CHANNEL_ID = "1458311760233889973";
 
 /* ================= EVENTO MENSAJES ================= */
-
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   /* ===== AUTO CHAT SOLO EN GENERAL ===== */
-
   if (message.channel.id === GENERAL_CHANNEL_ID) {
     const msg = message.content.toLowerCase();
 
@@ -71,30 +66,33 @@ client.on("messageCreate", async (message) => {
     if (msg.includes("nexus")) {
       message.reply("⚔️ Nexus domina el servidor");
     }
+
+    if (msg.includes("bot")) {
+      message.reply("🤖 Estoy activo 24/7");
+    }
   }
 
   /* ===== COMANDO .PHASE ===== */
-
   if (!message.content.startsWith(".phase")) return;
 
   if (!message.member.permissions.has("Administrator")) {
-    return message.reply("❌ No tienes permiso.");
+    return message.reply("❌ No tienes permiso para usar este comando.");
   }
 
-  const args = message.content.split(" ");
+  const args = message.content.trim().split(/\s+/);
   const target = message.mentions.members.first();
-  const phase = args[2];
-  const level1 = args[3];
-  const level2 = args[4];
+  const phase = args[2]?.toLowerCase();
+  const level1 = args[3]?.toLowerCase();
+  const level2 = args[4]?.toLowerCase();
 
   if (!target) return message.reply("❌ Menciona un usuario.");
-  if (!PHASE_ROLES.hasOwnProperty(phase)) return message.reply("❌ Fase inválida (0-5).");
+  if (!PHASE_ROLES[phase]) return message.reply("❌ Fase inválida (1-5 o app).");
 
   try {
     // 🔄 Quitar todas las fases
     for (let key in PHASE_ROLES) {
       const roleId = PHASE_ROLES[key];
-      if (roleId && target.roles.cache.has(roleId)) {
+      if (target.roles.cache.has(roleId)) {
         await target.roles.remove(roleId);
       }
     }
@@ -108,23 +106,15 @@ client.on("messageCreate", async (message) => {
     }
 
     // ➕ Añadir nueva fase
-    if (phase !== "0") {
-      await target.roles.add(PHASE_ROLES[phase]);
-    }
+    await target.roles.add(PHASE_ROLES[phase]);
 
     // ➕ Añadir subniveles si existen
-    if (LEVEL_ROLES[level1]) {
-      await target.roles.add(LEVEL_ROLES[level1]);
-    }
-
-    if (LEVEL_ROLES[level2]) {
-      await target.roles.add(LEVEL_ROLES[level2]);
-    }
+    if (LEVEL_ROLES[level1]) await target.roles.add(LEVEL_ROLES[level1]);
+    if (LEVEL_ROLES[level2]) await target.roles.add(LEVEL_ROLES[level2]);
 
     message.reply(`✅ ${target.user.username} ahora es Phase ${phase} ${level1 || ""} ${level2 || ""}`);
-
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     message.reply("❌ Error al asignar roles.");
   }
 });
