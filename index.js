@@ -48,7 +48,7 @@ const LEVEL_ROLES = {
 const GENERAL_CHANNEL_ID = "1458311760233889973";
 
 // ================= EVENTO READY =================
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`🔥 Bot listo como ${client.user.tag}`);
 });
 
@@ -60,8 +60,8 @@ client.on("messageCreate", async (message) => {
   if (message.channel.id === GENERAL_CHANNEL_ID) {
     const rand = Math.random();
 
-    // 15% chance: respuesta normal
-    if (rand < 0.15) {
+    // 10% chance: respuesta normal
+    if (rand < 0.10) {
       const burlasLatam = [
         "Weeee, eso ta medio jato 😂",
         "Ta bravo el we 😎",
@@ -77,8 +77,8 @@ client.on("messageCreate", async (message) => {
       message.channel.send(random);
     }
 
-    // 15% chance: burlita picante a alguien mencionado
-    else if (rand < 0.30 && message.mentions.members.size > 0) {
+    // 10% chance: burlita picante a alguien mencionado
+    else if (rand < 0.20 && message.mentions.members.size > 0) {
       const burlasFuerte = [
         "Jajaja pobre",
         "Weee mirá quién habla 😏",
@@ -90,7 +90,7 @@ client.on("messageCreate", async (message) => {
       message.channel.send(`${random} ${target.user.username} 😂`);
     }
 
-    // 70% chance: no dice nada
+    // 80% chance: no dice nada
   }
 
   // ===== COMANDO .PHASE =====
@@ -110,24 +110,47 @@ client.on("messageCreate", async (message) => {
   if (!PHASE_ROLES[phase]) return message.reply("❌ Fase inválida (0-5 o app).");
 
   try {
-    // 🔄 Quitar todas las fases
+    // 🔄 Quitar todas las fases que el bot pueda quitar
     for (let key in PHASE_ROLES) {
       const roleId = PHASE_ROLES[key];
-      if (target.roles.cache.has(roleId)) await target.roles.remove(roleId);
+      if (target.roles.cache.has(roleId) && message.guild.roles.cache.has(roleId)) {
+        const role = message.guild.roles.cache.get(roleId);
+        if (role.position < message.guild.me.roles.highest.position) {
+          await target.roles.remove(role);
+        }
+      }
     }
 
-    // 🔄 Quitar todos los niveles
+    // 🔄 Quitar todos los niveles que el bot pueda quitar
     for (let key in LEVEL_ROLES) {
       const roleId = LEVEL_ROLES[key];
-      if (target.roles.cache.has(roleId)) await target.roles.remove(roleId);
+      if (target.roles.cache.has(roleId) && message.guild.roles.cache.has(roleId)) {
+        const role = message.guild.roles.cache.get(roleId);
+        if (role.position < message.guild.me.roles.highest.position) {
+          await target.roles.remove(role);
+        }
+      }
     }
 
-    // ➕ Añadir nueva fase
-    await target.roles.add(PHASE_ROLES[phase]);
+    // ➕ Añadir nueva fase si el bot puede
+    const phaseRole = message.guild.roles.cache.get(PHASE_ROLES[phase]);
+    if (phaseRole && phaseRole.position < message.guild.me.roles.highest.position) {
+      await target.roles.add(phaseRole);
+    }
 
-    // ➕ Añadir subniveles si existen
-    if (LEVEL_ROLES[level1]) await target.roles.add(LEVEL_ROLES[level1]);
-    if (LEVEL_ROLES[level2]) await target.roles.add(LEVEL_ROLES[level2]);
+    // ➕ Añadir subniveles si existen y el bot puede
+    if (LEVEL_ROLES[level1]) {
+      const role = message.guild.roles.cache.get(LEVEL_ROLES[level1]);
+      if (role && role.position < message.guild.me.roles.highest.position) {
+        await target.roles.add(role);
+      }
+    }
+    if (LEVEL_ROLES[level2]) {
+      const role = message.guild.roles.cache.get(LEVEL_ROLES[level2]);
+      if (role && role.position < message.guild.me.roles.highest.position) {
+        await target.roles.add(role);
+      }
+    }
 
     message.reply(`✅ ${target.user.username} ahora es Phase ${phase} ${level1 || ""} ${level2 || ""}`);
   } catch (err) {
