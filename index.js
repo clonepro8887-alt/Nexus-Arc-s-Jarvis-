@@ -119,4 +119,22 @@ client.on("messageCreate", async (message) => {
     // 🔄 Quitar todos los niveles
     for (let key in LEVEL_ROLES) {
       const roleId = LEVEL_ROLES[key];
-      if (
+      if (target.roles.cache.has(roleId)) await target.roles.remove(roleId);
+    }
+
+    // ➕ Añadir nueva fase
+    await target.roles.add(PHASE_ROLES[phase]);
+
+    // ➕ Añadir subniveles si existen
+    if (LEVEL_ROLES[level1]) await target.roles.add(LEVEL_ROLES[level1]);
+    if (LEVEL_ROLES[level2]) await target.roles.add(LEVEL_ROLES[level2]);
+
+    message.reply(`✅ ${target.user.username} ahora es Phase ${phase} ${level1 || ""} ${level2 || ""}`);
+  } catch (err) {
+    console.error("Error asignando roles:", err);
+    message.reply("❌ Error al asignar roles. Revisa jerarquía y permisos del bot.");
+  }
+});
+
+// ================= LOGIN =================
+client.login(process.env.TOKEN);
