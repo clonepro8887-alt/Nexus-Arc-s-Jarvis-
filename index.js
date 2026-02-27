@@ -60,8 +60,8 @@ client.on("messageCreate", async (message) => {
   if (message.channel.id === GENERAL_CHANNEL_ID) {
     const rand = Math.random();
 
-    // 30% chance: respuesta normal
-    if (rand < 0.30) {
+    // 15% chance: respuesta normal
+    if (rand < 0.15) {
       const burlasLatam = [
         "Weeee, eso ta medio jato 😂",
         "Ta bravo el we 😎",
@@ -77,8 +77,8 @@ client.on("messageCreate", async (message) => {
       message.channel.send(random);
     }
 
-    // 30% chance: burlita picante a alguien mencionado
-    else if (rand < 0.60 && message.mentions.members.size > 0) {
+    // 15% chance: burlita picante a alguien mencionado
+    else if (rand < 0.30 && message.mentions.members.size > 0) {
       const burlasFuerte = [
         "Jajaja pobre",
         "Weee mirá quién habla 😏",
@@ -90,7 +90,7 @@ client.on("messageCreate", async (message) => {
       message.channel.send(`${random} ${target.user.username} 😂`);
     }
 
-    // 40% chance: no dice nada
+    // 70% chance: no dice nada
   }
 
   // ===== COMANDO .PHASE =====
