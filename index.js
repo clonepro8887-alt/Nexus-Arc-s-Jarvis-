@@ -1,6 +1,19 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
-const express = require("express");
+import OpenAI from "openai";
+import { Client, GatewayIntentBits, EmbedBuilder } from "discord.js";
+import express from "express";
+import dotenv from "dotenv";
+dotenv.config();
 
+// ============================
+//       OpenAI
+// ============================
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY // toma la API key de Railway
+});
+
+// ============================
+//       Discord Bot
+// ============================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -11,12 +24,12 @@ const client = new Client({
 });
 
 // ============================
-//        RAILWAY SERVER
+//       Railway Server
 // ============================
 const app = express();
 
 app.get("/", (req, res) => {
-  res.send("Nexus Bot activo");
+  res.send("🔥 Nexus Bot activo en Railway");
 });
 
 const PORT = process.env.PORT || 3000;
@@ -25,26 +38,24 @@ app.listen(PORT, () => {
 });
 
 // ============================
-//        CLIENT READY
+//       Client Ready
 // ============================
-client.once("clientReady", (c) => {
-  console.log(`Conectado como ${c.user.tag}`);
+client.once("ready", () => {
+  console.log(`Conectado como ${client.user.tag}`);
 });
 
 // ============================
-//        MESSAGE CREATE
+//       Message Create
 // ============================
 client.on("messageCreate", async (message) => {
-
   if (message.author.bot) return;
   const content = message.content.toLowerCase();
 
   // =========================
-  //        PHASE SYSTEM
+  //       PHASE SYSTEM
   // =========================
   if (content.startsWith(".phase") || content.startsWith(".ph")) {
-
-    const allowedRoleId = "1457921277540040932"; // Rol permitido para usar .phase
+    const allowedRoleId = "1457921277540040932"; // rol permitido para usar .phase
     if (!message.member.roles.cache.has(allowedRoleId))
       return message.reply("❌ No tienes el rol necesario para usar este comando.");
 
@@ -90,7 +101,7 @@ client.on("messageCreate", async (message) => {
     if (!selectedState) return message.reply("Estado inválido.");
 
     try {
-      // Quitar todas las phases, niveles y estados anteriores
+      // Quitar roles anteriores
       const allRoles = [
         ...Object.values(phaseRoles),
         ...Object.values(levelRoles),
@@ -99,7 +110,7 @@ client.on("messageCreate", async (message) => {
 
       for (const id of allRoles) {
         if (member.roles.cache.has(id)) {
-          try { await member.roles.remove(id); }
+          try { await member.roles.remove(id); } 
           catch (e) { console.log(`No se pudo quitar rol ${id} a ${member.user.tag}`); }
         }
       }
@@ -115,16 +126,12 @@ client.on("messageCreate", async (message) => {
         }
       }
 
-      // Embed
+      // Embed informativo
       const embed = new EmbedBuilder()
         .setColor("#2b2d31")
         .setTitle("PHASE ACTUALIZADA")
         .setDescription(
-          `Usuario: ${member}\n` +
-          `Phase: ${phaseKey.toUpperCase()}\n` +
-          `Nivel: ${level.toUpperCase()}\n` +
-          `Estado: ${state.toUpperCase()}\n` +
-          `Roles asignados: ${addedRoles.length}/3`
+          `Usuario: ${member}\nPhase: ${phaseKey.toUpperCase()}\nNivel: ${level.toUpperCase()}\nEstado: ${state.toUpperCase()}\nRoles asignados: ${addedRoles.length}/3`
         )
         .setThumbnail("https://cdn.discordapp.com/attachments/1233881531404124202/1476661075138314260/a7010d0c5a38634ed065c269679e7fcd.gif")
         .setFooter({ text: `Asignado por: ${message.author.tag}` })
@@ -138,31 +145,25 @@ client.on("messageCreate", async (message) => {
   }
 
   // =========================
-  //      AUTO CHAT 5%
+  //       RESPUESTA OPENAI
   // =========================
-  if (Math.random() <= 0.05) {
-    const burlas = [
-      "tas medio lento ah",
-      "más rápido mi internet",
-      "anda practica un poco",
-      "concentrate mejor",
-      "modo ahorro activado?"
-    ];
-    const randomBurla = burlas[Math.floor(Math.random() * burlas.length)];
-    return message.reply(randomBurla);
+  if (!content.startsWith(".phase") && !message.author.bot) {
+    try {
+      if (content.trim().length === 0) return; // evita mensajes vacíos
+      const response = await openai.chat.completions.create({
+        model: "gpt-4.1-mini",
+        messages: [{ role: "user", content: message.content }],
+        max_tokens: 150
+      });
+      const reply = response.choices[0].message.content;
+      return message.reply(reply);
+    } catch (err) {
+      console.error("Error OpenAI:", err);
+    }
   }
-
-  // =========================
-  //      RESPUESTAS NORMALES
-  // =========================
-  if (content.includes("hola") || content.includes("buenas")) return message.reply("Habla.");
-  if (content.includes("nexus")) return message.reply("Nexus activo.");
-  if (content.includes("quien manda")) return message.reply("El sistema.");
-  if (content.includes("me aburro")) return message.reply("Entrena más.");
-  if (message.mentions.has(client.user)) return message.reply("¿Qué necesitas?");
 });
 
 // ============================
-//        LOGIN
+//       LOGIN
 // ============================
 client.login(process.env.TOKEN);
