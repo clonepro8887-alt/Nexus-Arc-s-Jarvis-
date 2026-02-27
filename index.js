@@ -26,21 +26,22 @@ const client = new Client({
 
 // ================= ROLES =================
 const PHASE_ROLES = {
-  "1": "1476743660484956204",
-  "2": "1476743716667527291",
-  "3": "1476743749542609048",
-  "4": "1476743770304155811",
-  "5": "1476743788973260954",
-  "app": "1476743732584775722"
+  "0": "1458682851414380605",
+  "1": "1458680324799201280",
+  "2": "1473427053561905363",
+  "3": "1458680188937175296",
+  "4": "1458679781536043060",
+  "5": "1458678850060947719",
+  "app": "1473427053561905363"
 };
 
 const LEVEL_ROLES = {
-  "low": "1476744695282532485",
-  "weak": "1476744710793068706",
-  "mid": "1476744806897287239",
-  "stable": "1476744819043860591",
-  "high": "1476744734830498065",
-  "strong": "1476744781253185688"
+  "low": "1458679384691970186",
+  "mid": "1458679896837586976",
+  "high": "1458680037912875151",
+  "weak": "1458679584429178921",
+  "stable": "1458679985668755466",
+  "strong": "1458680108066930731"
 };
 
 // ID de canal #general donde funciona auto chat
@@ -56,23 +57,45 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   // ===== AUTO CHAT SOLO EN GENERAL =====
-  if (message.channel.id === GENERAL_CHANNEL_ID && Math.random() < 0.40) {
-    const respuestas = [
-      "Y que we 😂",
-      "Hablen bien ps",
-      "Ta fuerte eso 👀",
-      "XD",
-      "Eso sonó personal 😭",
-      "Estoy leyendo todo 👁️"
-    ];
-    const random = respuestas[Math.floor(Math.random() * respuestas.length)];
-    message.channel.send(random);
+  if (message.channel.id === GENERAL_CHANNEL_ID) {
+    const rand = Math.random();
+
+    // 30% chance: respuesta normal
+    if (rand < 0.30) {
+      const burlasLatam = [
+        "Weeee, eso ta medio jato 😂",
+        "Ta bravo el we 😎",
+        "No manches, weee 😭",
+        "Jajaja qué haces güey XD",
+        "Ta pesado eso, boludo 👀",
+        "Weee, eso suena duro 😂",
+        "XD qué weeee",
+        "Ja ja ja, te leyeron we",
+        "Ta todo cagado 😂"
+      ];
+      const random = burlasLatam[Math.floor(Math.random() * burlasLatam.length)];
+      message.channel.send(random);
+    }
+
+    // 30% chance: burlita picante a alguien mencionado
+    else if (rand < 0.60 && message.mentions.members.size > 0) {
+      const burlasFuerte = [
+        "Jajaja pobre",
+        "Weee mirá quién habla 😏",
+        "XD qué le pasó ahora a",
+        "Ta cagado weee"
+      ];
+      const target = message.mentions.members.first();
+      const random = burlasFuerte[Math.floor(Math.random() * burlasFuerte.length)];
+      message.channel.send(`${random} ${target.user.username} 😂`);
+    }
+
+    // 40% chance: no dice nada
   }
 
   // ===== COMANDO .PHASE =====
   if (!message.content.startsWith(".phase")) return;
 
-  // Solo admins o usuarios con Manage Roles
   if (!message.member.permissions.has("Administrator")) {
     return message.reply("❌ No tienes permiso para usar este comando.");
   }
@@ -84,14 +107,9 @@ client.on("messageCreate", async (message) => {
   const level2 = args[4]?.toLowerCase();
 
   if (!target) return message.reply("❌ Menciona un usuario.");
-  if (!PHASE_ROLES[phase]) return message.reply("❌ Fase inválida (1-5 o app).");
+  if (!PHASE_ROLES[phase]) return message.reply("❌ Fase inválida (0-5 o app).");
 
   try {
-    // ===== DEPURACIÓN =====
-    console.log("Target:", target.user.tag);
-    console.log("Phase a añadir:", PHASE_ROLES[phase]);
-    console.log("Level1:", LEVEL_ROLES[level1], "Level2:", LEVEL_ROLES[level2]);
-
     // 🔄 Quitar todas las fases
     for (let key in PHASE_ROLES) {
       const roleId = PHASE_ROLES[key];
@@ -101,22 +119,4 @@ client.on("messageCreate", async (message) => {
     // 🔄 Quitar todos los niveles
     for (let key in LEVEL_ROLES) {
       const roleId = LEVEL_ROLES[key];
-      if (target.roles.cache.has(roleId)) await target.roles.remove(roleId);
-    }
-
-    // ➕ Añadir nueva fase
-    await target.roles.add(PHASE_ROLES[phase]);
-
-    // ➕ Añadir subniveles si existen
-    if (LEVEL_ROLES[level1]) await target.roles.add(LEVEL_ROLES[level1]);
-    if (LEVEL_ROLES[level2]) await target.roles.add(LEVEL_ROLES[level2]);
-
-    message.reply(`✅ ${target.user.username} ahora es Phase ${phase} ${level1 || ""} ${level2 || ""}`);
-  } catch (err) {
-    console.error("Error asignando roles:", err);
-    message.reply("❌ Error al asignar roles. Revisa jerarquía y permisos del bot.");
-  }
-});
-
-// ================= LOGIN =================
-client.login(process.env.TOKEN);
+      if (
