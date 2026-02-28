@@ -132,13 +132,16 @@ client.on("messageCreate", async (message) => {
     if (!question) return message.reply("❌ Escribe tu pregunta después de `>ask`.");
 
     try {
-      const res = await fetch("https://api-inference.huggingface.co/models/gpt2", {
+      const res = await fetch("https://router.huggingface.co/models/gpt2", {
         method: "POST",
         headers: { 
           "Authorization": `Bearer ${process.env.HF_API_KEY}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ inputs: question, parameters: { max_new_tokens: 150 } })
+        body: JSON.stringify({
+          inputs: question,
+          parameters: { max_new_tokens: 150 }
+        })
       });
 
       const data = await res.json();
@@ -146,6 +149,7 @@ client.on("messageCreate", async (message) => {
 
       const reply = data[0]?.generated_text || "❌ No se pudo generar respuesta.";
       return message.reply(reply);
+
     } catch (err) {
       console.error("Error Hugging Face:", err);
       return message.reply("❌ Ocurrió un error al conectar con Hugging Face.");
