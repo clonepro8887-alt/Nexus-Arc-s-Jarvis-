@@ -134,12 +134,13 @@ client.on("messageCreate", async (message) => {
     try {
       const res = await fetch("https://router.huggingface.co/models/gpt2", {
         method: "POST",
-        headers: { 
+        headers: {
           "Authorization": `Bearer ${process.env.HF_API_KEY}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
           inputs: question,
+          options: { wait_for_model: true },
           parameters: { max_new_tokens: 150 }
         })
       });
@@ -147,12 +148,12 @@ client.on("messageCreate", async (message) => {
       const data = await res.json();
       if (data.error) return message.reply("❌ Error Hugging Face: " + data.error);
 
-      const reply = data[0]?.generated_text || "❌ No se pudo generar respuesta.";
+      const reply = data[0]?.generated_text || data.generated_text || "❌ No se pudo generar respuesta.";
       return message.reply(reply);
 
     } catch (err) {
       console.error("Error Hugging Face:", err);
-      return message.reply("❌ Ocurrió un error al conectar con Hugging Face.");
+      return message.reply("❌ Ocurrió un error al conectar con Hugging Face. Revisa tu HF_API_KEY y la conexión.");
     }
   }
 });
