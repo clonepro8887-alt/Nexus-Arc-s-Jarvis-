@@ -1,12 +1,10 @@
 import { Client, GatewayIntentBits, EmbedBuilder } from "discord.js";
 import express from "express";
 import dotenv from "dotenv";
-import fetch from "node-fetch";
-
 dotenv.config();
 
 // ============================
-//       Discord Bot
+// Discord Bot
 // ============================
 const client = new Client({
   intents: [
@@ -18,40 +16,52 @@ const client = new Client({
 });
 
 // ============================
-//       Railway Server
+// Railway Web Server
 // ============================
 const app = express();
 
 app.get("/", (req, res) => {
-  res.send("🔥 Nexus Bot activo en Railway");
+  res.send("🔥 Nexus Bot activo");
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server activo en puerto ${PORT}`));
 
 // ============================
-//       Client Ready (FIX)
+// Ready
 // ============================
-client.once("clientReady", () => {
-  console.log(`✅ Conectado como ${client.user.tag}`);
+client.once("ready", () => {
+  console.log(`Conectado como ${client.user.tag}`);
 });
 
 // ============================
-//       Message Create
+// Mensajes
 // ============================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
-
   const content = message.content.toLowerCase();
 
   // =========================
-  //       PHASE SYSTEM
+  // COMANDOS SIMPLES
   // =========================
+
+  if (content === ">ping") {
+    return message.reply("🏓 Pong!");
+  }
+
+  if (content === ">info") {
+    return message.reply("🔥 Nexus Bot activo y funcionando sin IA.");
+  }
+
+  // =========================
+  // PHASE SYSTEM (SIN APP1)
+  // =========================
+
   if (content.startsWith(".phase") || content.startsWith(".ph")) {
 
     const allowedRoleId = "1457921277540040932";
     if (!message.member.roles.cache.has(allowedRoleId))
-      return message.reply("❌ No tienes el rol necesario para usar este comando.");
+      return message.reply("❌ No tienes permiso.");
 
     const args = message.content.trim().split(/\s+/);
     const member = message.mentions.members.first();
@@ -62,13 +72,12 @@ client.on("messageCreate", async (message) => {
     const state = args[4]?.toLowerCase();
 
     if (!phaseKey || !level || !state)
-      return message.reply("Usa: .phase @user ph0/ph1/ph2/app1/ph3/ph4/ph5 nivel estado");
+      return message.reply("Usa: .phase @user ph0/ph1/ph2/ph3/ph4/ph5 nivel estado");
 
     const phaseRoles = {
       ph0: "1458682851414380605",
       ph1: "1458680324799201280",
       ph2: "1476995979763912977",
-      app1: "1473427053561905363",
       ph3: "1458680188937175296",
       ph4: "1458679781536043060",
       ph5: "1458678850060947719"
@@ -95,6 +104,7 @@ client.on("messageCreate", async (message) => {
     if (!selectedState) return message.reply("Estado inválido.");
 
     try {
+
       const allRoles = [
         ...Object.values(phaseRoles),
         ...Object.values(levelRoles),
@@ -103,18 +113,13 @@ client.on("messageCreate", async (message) => {
 
       for (const id of allRoles) {
         if (member.roles.cache.has(id)) {
-          try { await member.roles.remove(id); } catch {}
+          await member.roles.remove(id).catch(() => {});
         }
       }
 
-      const addedRoles = [];
-
-      for (const roleId of [selectedPhase, selectedLevel, selectedState]) {
-        try {
-          await member.roles.add(roleId);
-          addedRoles.push(roleId);
-        } catch {}
-      }
+      await member.roles.add(selectedPhase).catch(() => {});
+      await member.roles.add(selectedLevel).catch(() => {});
+      await member.roles.add(selectedState).catch(() => {});
 
       const embed = new EmbedBuilder()
         .setColor("#2b2d31")
@@ -123,69 +128,21 @@ client.on("messageCreate", async (message) => {
           `Usuario: ${member}\n` +
           `Phase: ${phaseKey.toUpperCase()}\n` +
           `Nivel: ${level.toUpperCase()}\n` +
-          `Estado: ${state.toUpperCase()}\n` +
-          `Roles asignados: ${addedRoles.length}/3`
+          `Estado: ${state.toUpperCase()}`
         )
-        .setThumbnail("https://cdn.discordapp.com/attachments/1233881531404124202/1476661075138314260/a7010d0c5a38634ed065c269679e7fcd.gif")
-        .setFooter({ text: `Asignado por: ${message.author.tag}` })
+        .setFooter({ text: `Asignado por ${message.author.tag}` })
         .setTimestamp();
 
       return message.reply({ embeds: [embed] });
 
     } catch (err) {
       console.error(err);
+      return message.reply("❌ Error al asignar roles.");
     }
   }
-
-  // =========================
-  //       ASK HUGGING FACE
-  // =========================
-  if (content.startsWith(">ask")) {
-
-    const question = message.content.slice(4).trim();
-    if (!question)
-      return message.reply("❌ Escribe tu pregunta después de `>ask`.");
-
-    try {
-
-      const res = await fetch(
-        "https://router.huggingface.co/hf-inference/models/mistralai/Mistral-7B-Instruct-v0.2",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.HF_API_TOKEN}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            inputs: question,
-            parameters: { max_new_tokens: 150 }
-          })
-        }
-      );
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("HF ERROR:", text);
-        return message.reply("❌ Error al conectar con Hugging Face.");
-      }
-
-      const data = await res.json();
-
-      const reply =
-        data[0]?.generated_text ||
-        "❌ No se pudo generar respuesta.";
-
-      return message.reply(reply.slice(0, 2000));
-
-    } catch (err) {
-      console.error("Error Hugging Face:", err);
-      return message.reply("❌ Ocurrió un error al conectar con Hugging Face.");
-    }
-  }
-
 });
 
 // ============================
-//       LOGIN
+// Login
 // ============================
 client.login(process.env.TOKEN);
