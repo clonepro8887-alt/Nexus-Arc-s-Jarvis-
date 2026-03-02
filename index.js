@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // ============================
-// Discord Bot
+// DISCORD CLIENT
 // ============================
 const client = new Client({
   intents: [
@@ -16,71 +16,88 @@ const client = new Client({
 });
 
 // ============================
-// Railway Web Server
+// EXPRESS (UPTIME RAILWAY)
 // ============================
 const app = express();
 
 app.get("/", (req, res) => {
-  res.send("🔥 Nexus Bot activo");
+  res.status(200).send("Nexus Bot activo");
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server activo en puerto ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Servidor web activo en puerto ${PORT}`);
+});
 
 // ============================
-// Ready
+// BLOQUEO 1 DÍA POR USUARIO
+// ============================
+const phaseCooldown = new Map();
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
+// ============================
+// READY
 // ============================
 client.once("ready", () => {
   console.log(`Conectado como ${client.user.tag}`);
 });
 
 // ============================
-// Mensajes
+// MENSAJES
 // ============================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
-  const content = message.content.toLowerCase();
 
-  // =========================
-  // COMANDOS SIMPLES
-  // =========================
+  const content = message.content;
 
   if (content === ">ping") {
-    return message.reply("🏓 Pong!");
+    return message.reply("Pong");
   }
 
   if (content === ">info") {
-    return message.reply("🔥 Nexus Bot activo y funcionando sin IA.");
+    return message.reply("Nexus Bot activo y funcionando");
   }
 
-  // =========================
-  // PHASE SYSTEM (SIN APP1)
-  // =========================
-
-  if (content.startsWith(".phase") || content.startsWith(".ph")) {
+  if (content.toLowerCase().startsWith(".phase") || content.toLowerCase().startsWith(".ph")) {
 
     const allowedRoleId = "1457921277540040932";
-    if (!message.member.roles.cache.has(allowedRoleId))
-      return message.reply("❌ No tienes permiso.");
 
-    const args = message.content.trim().split(/\s+/);
+    if (!message.member.roles.cache.has(allowedRoleId))
+      return message.reply("No tienes permiso.");
+
+    const args = content.trim().split(/\s+/);
     const member = message.mentions.members.first();
-    if (!member) return message.reply("Menciona a un usuario.");
+
+    if (!member)
+      return message.reply("Usa: .phase @usuario p0-p5 low/mid/high weak/estable/strong");
 
     const phaseKey = args[2]?.toLowerCase();
     const level = args[3]?.toLowerCase();
     const state = args[4]?.toLowerCase();
 
     if (!phaseKey || !level || !state)
-      return message.reply("Usa: .phase @user ph0/ph1/ph2/ph3/ph4/ph5 nivel estado");
+      return message.reply("Usa: .phase @usuario p0-p5 low/mid/high weak/estable/strong");
+
+    const now = Date.now();
+    const lastPhase = phaseCooldown.get(member.id);
+
+    if (lastPhase && now - lastPhase < ONE_DAY) {
+      const remaining = ONE_DAY - (now - lastPhase);
+      const hours = Math.floor(remaining / (1000 * 60 * 60));
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+
+      return message.reply(
+        `Este usuario debe esperar ${hours}h ${minutes}m para una nueva evaluación.`
+      );
+    }
 
     const phaseRoles = {
-      ph0: "1458682851414380605",
-      ph1: "1458680324799201280",
-      ph2: "1476995979763912977",
-      ph3: "1458680188937175296",
-      ph4: "1458679781536043060",
-      ph5: "1458678850060947719"
+      p0: "1458682851414380605",
+      p1: "1458680324799201280",
+      p2: "1476995979763912977",
+      p3: "1458680188937175296",
+      p4: "1458679781536043060",
+      p5: "1458678850060947719"
     };
 
     const levelRoles = {
@@ -99,9 +116,9 @@ client.on("messageCreate", async (message) => {
     const selectedLevel = levelRoles[level];
     const selectedState = stateRoles[state];
 
-    if (!selectedPhase) return message.reply("Phase inválida.");
-    if (!selectedLevel) return message.reply("Nivel inválido.");
-    if (!selectedState) return message.reply("Estado inválido.");
+    if (!selectedPhase) return message.reply("Phase invalida.");
+    if (!selectedLevel) return message.reply("Nivel invalido.");
+    if (!selectedState) return message.reply("Estado invalido.");
 
     try {
 
@@ -117,18 +134,22 @@ client.on("messageCreate", async (message) => {
         }
       }
 
-      await member.roles.add(selectedPhase).catch(() => {});
-      await member.roles.add(selectedLevel).catch(() => {});
-      await member.roles.add(selectedState).catch(() => {});
+      await member.roles.add([selectedPhase, selectedLevel, selectedState]);
+
+      phaseCooldown.set(member.id, now);
+
+      const nextEvaluation = new Date(now + ONE_DAY).toLocaleString();
 
       const embed = new EmbedBuilder()
         .setColor("#2b2d31")
-        .setTitle("PHASE ACTUALIZADA")
+        .setTitle("★ PHASE SYSTEM ★")
         .setDescription(
-          `Usuario: ${member}\n` +
-          `Phase: ${phaseKey.toUpperCase()}\n` +
-          `Nivel: ${level.toUpperCase()}\n` +
-          `Estado: ${state.toUpperCase()}`
+          `★ Usuario: ${member}\n` +
+          `★ Phase: ${phaseKey.toUpperCase()}\n` +
+          `★ Tier: ${level.toUpperCase()}\n` +
+          `★ Sub Tier: ${state.toUpperCase()}\n\n` +
+          `★ Cooldown: 24 Horas\n` +
+          `★ Proxima evaluacion: ${nextEvaluation}`
         )
         .setFooter({ text: `Asignado por ${message.author.tag}` })
         .setTimestamp();
@@ -137,12 +158,9 @@ client.on("messageCreate", async (message) => {
 
     } catch (err) {
       console.error(err);
-      return message.reply("❌ Error al asignar roles.");
+      return message.reply("Error al asignar roles.");
     }
   }
 });
 
-// ============================
-// Login
-// ============================
 client.login(process.env.TOKEN);
