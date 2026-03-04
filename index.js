@@ -30,7 +30,7 @@ app.listen(PORT, "0.0.0.0", () => {
 });
 
 // ============================
-// BLOQUEO 1 DÍA POR USUARIO
+// BLOQUEO 1 DIA POR USUARIO
 // ============================
 const phaseCooldown = new Map();
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -38,7 +38,7 @@ const ONE_DAY = 24 * 60 * 60 * 1000;
 // ============================
 // READY
 // ============================
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`Conectado como ${client.user.tag}`);
 });
 
@@ -48,48 +48,58 @@ client.once("ready", () => {
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  const content = message.content;
+  const content = message.content.trim();
 
-  if (content === ">ping") {
-    return message.reply("Pong");
-  }
+  // COMANDOS BASICOS
+  if (content === ">ping") return message.reply("Pong");
+  if (content === ">info") return message.reply("Nexus Bot activo y funcionando");
 
-  if (content === ">info") {
-    return message.reply("Nexus Bot activo y funcionando");
-  }
-
+  // =========================
+  // PHASE SYSTEM
+  // =========================
   if (content.toLowerCase().startsWith(".phase") || content.toLowerCase().startsWith(".ph")) {
 
     const allowedRoleId = "1457921277540040932";
-
     if (!message.member.roles.cache.has(allowedRoleId))
       return message.reply("No tienes permiso.");
 
-    const args = content.trim().split(/\s+/);
+    const args = content.split(/\s+/);
     const member = message.mentions.members.first();
-
     if (!member)
       return message.reply("Usa: .phase @usuario p0-p5 low/mid/high weak/estable/strong");
 
-    const phaseKey = args[2]?.toLowerCase();
-    const level = args[3]?.toLowerCase();
-    const state = args[4]?.toLowerCase();
+    let phaseKey = args[2]?.toLowerCase();
+    let levelInput = args[3]?.toLowerCase();
+    let stateInput = args[4]?.toLowerCase();
 
-    if (!phaseKey || !level || !state)
-      return message.reply("Usa: .phase @usuario p0-p5 low/mid/high weak/estable/strong");
+    if (!phaseKey || !levelInput || !stateInput)
+      return message.reply("Parametros incompletos.");
 
-    const now = Date.now();
-    const lastPhase = phaseCooldown.get(member.id);
+    // NORMALIZACION NIVEL
+    const levelMap = {
+      low: "low",
+      bajo: "low",
+      mid: "mid",
+      medio: "mid",
+      high: "high",
+      alto: "high"
+    };
 
-    if (lastPhase && now - lastPhase < ONE_DAY) {
-      const remaining = ONE_DAY - (now - lastPhase);
-      const hours = Math.floor(remaining / (1000 * 60 * 60));
-      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    // NORMALIZACION ESTADO
+    const stateMap = {
+      weak: "weak",
+      debil: "weak",
+      estable: "estable",
+      stable: "estable",
+      strong: "strong",
+      fuerte: "strong"
+    };
 
-      return message.reply(
-        `Este usuario debe esperar ${hours}h ${minutes}m para una nueva evaluación.`
-      );
-    }
+    const level = levelMap[levelInput];
+    const state = stateMap[stateInput];
+
+    if (!level) return message.reply("Nivel invalido.");
+    if (!state) return message.reply("Estado invalido.");
 
     const phaseRoles = {
       p0: "1458682851414380605",
@@ -113,12 +123,22 @@ client.on("messageCreate", async (message) => {
     };
 
     const selectedPhase = phaseRoles[phaseKey];
+    if (!selectedPhase) return message.reply("Phase invalida (usa p0-p5).");
+
     const selectedLevel = levelRoles[level];
     const selectedState = stateRoles[state];
 
-    if (!selectedPhase) return message.reply("Phase invalida.");
-    if (!selectedLevel) return message.reply("Nivel invalido.");
-    if (!selectedState) return message.reply("Estado invalido.");
+    const now = Date.now();
+    const lastPhase = phaseCooldown.get(member.id);
+
+    if (lastPhase && now - lastPhase < ONE_DAY) {
+      const remaining = ONE_DAY - (now - lastPhase);
+      const hours = Math.floor(remaining / (1000 * 60 * 60));
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      return message.reply(
+        `Este usuario debe esperar ${hours}h ${minutes}m para una nueva evaluacion.`
+      );
+    }
 
     try {
 
